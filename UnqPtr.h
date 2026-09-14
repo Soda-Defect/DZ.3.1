@@ -16,7 +16,7 @@ public:
     explicit UnqPtr(const T& value);
 
     UnqPtr(const UnqPtr<T>& other);
-    UnqPtr(UnqPtr<T>&& other);
+    UnqPtr(UnqPtr<T>&& other) noexcept;
 
     UnqPtr<T>& operator=(const UnqPtr<T>& other);
     UnqPtr<T>& operator=(UnqPtr<T>&& other) noexcept;
@@ -51,7 +51,7 @@ UnqPtr<T>::UnqPtr(const UnqPtr<T>& other)
 }
 
 template<typename T>
-UnqPtr<T>::UnqPtr(UnqPtr<T>&& other) : ptr(other.ptr)
+UnqPtr<T>::UnqPtr(UnqPtr<T>&& other) noexcept : ptr(other.ptr)
 {
     other.ptr = nullptr;
 }
