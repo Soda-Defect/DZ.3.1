@@ -1,6 +1,8 @@
 #ifndef SHRDPTR_H
 #define SHRDPTR_H
 
+#include <cstddef>
+#include <utility>
 #include "UnqPtr.h"
 
 template <typename T>
@@ -18,7 +20,7 @@ public:
     ShrdPtr(std::nullptr_t);
 
     ShrdPtr(const UnqPtr<T>& owner);
-    ShrdPtr(UnqPtr<T>&& owner) noexcept;
+    ShrdPtr(UnqPtr<T>&& owner);
 
     ShrdPtr(const ShrdPtr<T>& other);
     ShrdPtr(ShrdPtr<T>&& other) noexcept;
@@ -68,7 +70,7 @@ ShrdPtr<T>::ShrdPtr(std::nullptr_t): master(nullptr), referenceCount(nullptr) {}
 template <typename T>
 ShrdPtr<T>::ShrdPtr(const UnqPtr<T>& owner): master(nullptr), referenceCount(nullptr)
 {
-    if (owner)
+    if (owner.Get() != nullptr)
     {
         master = new UnqPtr<T>(owner);
         referenceCount = new size_t(1);
@@ -81,9 +83,9 @@ ShrdPtr<T>::ShrdPtr(const UnqPtr<T>& owner): master(nullptr), referenceCount(nul
 }
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner) noexcept : master(nullptr), referenceCount(nullptr)
+ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner) : master(nullptr), referenceCount(nullptr)
 {
-    if (owner)
+    if (owner.Get() != nullptr)
     {
         master = new UnqPtr<T>(std::move(owner));
         referenceCount = new size_t(1);
