@@ -32,6 +32,7 @@ public:
 
     ~ShrdPtr();
 
+    size_t GetCount();
     T* Get();
     const T* Get() const;
 };
@@ -126,6 +127,12 @@ template <typename T>
 ShrdPtr<T>::~ShrdPtr()
 {
     ReleaseReference();
+}
+
+template <typename T>
+size_t ShrdPtr<T>::GetCount()
+{
+    return *referenceCount;
 }
 
 template <typename T>
