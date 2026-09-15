@@ -15,10 +15,10 @@ public:
     explicit UnqPtr(T* ptr_);
     explicit UnqPtr(const T& value);
 
-    UnqPtr(const UnqPtr<T>& other);
+    UnqPtr(const UnqPtr<T>& other) = delete;
     UnqPtr(UnqPtr<T>&& other) noexcept;
 
-    UnqPtr<T>& operator=(const UnqPtr<T>& other);
+    UnqPtr<T>& operator=(const UnqPtr<T>& other) = delete;
     UnqPtr<T>& operator=(UnqPtr<T>&& other) noexcept;
 
     ~UnqPtr();
@@ -40,35 +40,9 @@ template<typename T>
 UnqPtr<T>::UnqPtr(const T& value) : ptr(new T(value)) {}
 
 template<typename T>
-UnqPtr<T>::UnqPtr(const UnqPtr<T>& other)
-{
-    if(other.ptr){
-        ptr = new T(*other.ptr);
-    }
-    else{
-        ptr = nullptr;
-    }
-}
-
-template<typename T>
 UnqPtr<T>::UnqPtr(UnqPtr<T>&& other) noexcept : ptr(other.ptr)
 {
     other.ptr = nullptr;
-}
-
-template<typename T>
-UnqPtr<T> &UnqPtr<T>::operator=(const UnqPtr<T>& other)
-{
-    if (this == &other){
-        return *this;
-    }
-
-    T* newPtr = other.ptr ? new T(*other.ptr) : nullptr;
-
-    delete ptr;
-    ptr = newPtr;
-
-    return *this;
 }
 
 template<typename T>

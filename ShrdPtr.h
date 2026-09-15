@@ -5,6 +5,8 @@
 #include <utility>
 #include "UnqPtr.h"
 
+//предоставляет владение несколькими частями и при этом работать с ресурсами верно
+
 template <typename T>
 class ShrdPtr
 {
@@ -20,13 +22,13 @@ public:
     ShrdPtr(std::nullptr_t);
 
     ShrdPtr(const UnqPtr<T>& owner);
-    ShrdPtr(UnqPtr<T>&& owner);
+    ShrdPtr(UnqPtr<T>&& owner) noexcept;
 
     ShrdPtr(const ShrdPtr<T>& other);
-    ShrdPtr(ShrdPtr<T>&& other) noexcept;
+    ShrdPtr(ShrdPtr<T>&& other) = delete;
 
     ShrdPtr<T>& operator=(const ShrdPtr<T>& other);
-    ShrdPtr<T>& operator=(ShrdPtr<T>&& other) noexcept;
+    ShrdPtr<T>& operator=(ShrdPtr<T>&& other) = delete;
 
     ~ShrdPtr();
 
@@ -83,7 +85,7 @@ ShrdPtr<T>::ShrdPtr(const UnqPtr<T>& owner): master(nullptr), referenceCount(nul
 }
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner) : master(nullptr), referenceCount(nullptr)
+ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner) noexcept : master(nullptr), referenceCount(nullptr)
 {
     if (owner.Get() != nullptr)
     {
@@ -104,13 +106,6 @@ ShrdPtr<T>::ShrdPtr(const ShrdPtr<T>& other) : master(other.master), referenceCo
 }
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(ShrdPtr<T>&& other) noexcept: master(other.master), referenceCount(other.referenceCount)
-{
-    other.master = nullptr;
-    other.referenceCount = nullptr;
-}
-
-template <typename T>
 ShrdPtr<T>& ShrdPtr<T>::operator=(const ShrdPtr<T>& other)
 {
     if (this == &other){
@@ -123,24 +118,6 @@ ShrdPtr<T>& ShrdPtr<T>::operator=(const ShrdPtr<T>& other)
     referenceCount = other.referenceCount;
 
     AddReference();
-
-    return *this;
-}
-
-template <typename T>
-ShrdPtr<T>& ShrdPtr<T>::operator=(ShrdPtr<T>&& other) noexcept
-{
-    if (this == &other){
-        return *this;
-    }
-
-    ReleaseReference();
-
-    master = other.master;
-    referenceCount = other.referenceCount;
-
-    other.master = nullptr;
-    other.referenceCount = nullptr;
 
     return *this;
 }
