@@ -33,6 +33,11 @@ public:
     const T* operator->() const;
 
     operator bool() const;
+
+    void Reset(T* newPtr = nullptr);
+    T* Release();
+
+    void Swap(UnqPtr<T>& other);
 };
 
 template<typename T>
@@ -111,9 +116,36 @@ const T* UnqPtr<T>::operator->() const
 }
 
 template <typename T>
-UnqPtr<T>::operator bool() const noexcept
+UnqPtr<T>::operator bool() const
 {
     return ptr != nullptr;
+}
+
+template <typename T>
+void UnqPtr<T>::Reset(T* newPtr)
+{
+    if (ptr != newPtr)
+    {
+        delete ptr;
+        ptr = newPtr;
+    }
+}
+
+template <typename T>
+T* UnqPtr<T>::Release()
+{
+    T* result = ptr;
+    ptr = nullptr;
+
+    return result;
+}
+
+template <typename T>
+void UnqPtr<T>::Swap(UnqPtr<T>& other)
+{
+    T* temp = ptr;
+    ptr = other.ptr;
+    other.ptr = temp;
 }
 
 #endif
