@@ -25,6 +25,14 @@ public:
 
     T* Get();
     const T* Get() const;
+
+    T& operator*();
+    const T& operator*() const;
+
+    T* operator->();
+    const T* operator->() const;
+
+    operator bool() const;
 };
 
 template<typename T>
@@ -76,6 +84,36 @@ template <typename T>
 const T* UnqPtr<T>::Get() const
 {
     return ptr;
+}
+
+template <typename T>
+T& UnqPtr<T>::operator*()
+{
+    return *ptr;
+}
+
+template <typename T>
+const T& UnqPtr<T>::operator*() const
+{
+    return *ptr;
+}
+
+template <typename T>
+T* UnqPtr<T>::operator->()
+{
+    return ptr;
+}
+
+template <typename T>
+const T* UnqPtr<T>::operator->() const
+{
+    return ptr;
+}
+
+template <typename T>
+UnqPtr<T>::operator bool() const noexcept
+{
+    return ptr != nullptr;
 }
 
 #endif
