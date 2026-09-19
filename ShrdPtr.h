@@ -21,8 +21,7 @@ public:
     ShrdPtr();
     ShrdPtr(std::nullptr_t);
 
-    ShrdPtr(const UnqPtr<T>& owner);
-    ShrdPtr(UnqPtr<T>&& owner) noexcept;
+    ShrdPtr(UnqPtr<T>&& owner);
 
     ShrdPtr(const ShrdPtr<T>& other);
     ShrdPtr(ShrdPtr<T>&& other) = delete;
@@ -32,9 +31,25 @@ public:
 
     ~ShrdPtr();
 
-    size_t GetCount();
+    size_t UseCount();
+    bool Unique();
+
     T* Get();
     const T* Get() const;
+
+    T& operator*();
+    const T& operator*() const;
+
+    T* operator->();
+    const T* operator->() const;
+
+    operator bool() const;
+
+    void Reset();
+    void Reset(T* newPtr);
+    void Reset(UnqPtr<T>&& owner);
+
+    void Swap(ShrdPtr<T>& other);
 };
 
 template <typename T>
@@ -71,33 +86,16 @@ template <typename T>
 ShrdPtr<T>::ShrdPtr(std::nullptr_t): master(nullptr), referenceCount(nullptr) {}
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(const UnqPtr<T>& owner): master(nullptr), referenceCount(nullptr)
+ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner): master(nullptr), referenceCount(nullptr)
 {
-    if (owner.Get() != nullptr)
-    {
-        master = new UnqPtr<T>(owner);
-        referenceCount = new size_t(1);
+    if (owner.Get() == nullptr){
+        return;
     }
-    else
-    {
-        master = nullptr;
-        referenceCount = nullptr;
-    }
-}
 
-template <typename T>
-ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner) noexcept : master(nullptr), referenceCount(nullptr)
-{
-    if (owner.Get() != nullptr)
-    {
-        master = new UnqPtr<T>(std::move(owner));
-        referenceCount = new size_t(1);
-    }
-    else
-    {
-        master = nullptr;
-        referenceCount = nullptr;
-    }
+    size_t* newCount = new size_t(1);
+    master = new UnqPtr<T>(std::move(owner));
+
+    referenceCount = newCount;
 }
 
 template <typename T>
@@ -130,16 +128,27 @@ ShrdPtr<T>::~ShrdPtr()
 }
 
 template <typename T>
-size_t ShrdPtr<T>::GetCount()
+size_t ShrdPtr<T>::UseCount()
 {
+    if (referenceCount == nullptr){
+        return 0;
+    }
+
     return *referenceCount;
+}
+
+template <typename T>
+bool ShrdPtr<T>::Unique()
+{
+    return UseCount() == 1;
 }
 
 template <typename T>
 T* ShrdPtr<T>::Get()
 {
-    if (master == nullptr)
+    if (master == nullptr){
         return nullptr;
+    }
 
     return master->Get();
 }
@@ -147,10 +156,74 @@ T* ShrdPtr<T>::Get()
 template <typename T>
 const T* ShrdPtr<T>::Get() const
 {
-    if (master == nullptr)
+    if (master == nullptr){
         return nullptr;
+    }
 
     return master->Get();
+}
+
+template <typename T>
+T& ShrdPtr<T>::operator*()
+{
+    return *master->Get();
+}
+
+template <typename T>
+const T& ShrdPtr<T>::operator*() const
+{
+    return *master->Get();
+}
+
+template <typename T>
+T* ShrdPtr<T>::operator->()
+{
+    return master->Get();
+}
+
+template <typename T>
+const T* ShrdPtr<T>::operator->() const
+{
+    return master->Get();
+}
+
+template <typename T>
+ShrdPtr<T>::operator bool() const
+{
+    return master != nullptr && master->Get() != nullptr;
+}
+
+template <typename T>
+void ShrdPtr<T>::Swap(ShrdPtr<T>& other)
+{
+    UnqPtr<T>* tempMaster = master;
+    master = other.master;
+    other.master = tempMaster;
+
+    size_t* tempCount = referenceCount;
+    referenceCount = other.referenceCount;
+    other.referenceCount = tempCount;
+}
+
+template <typename T>
+void ShrdPtr<T>::Reset()
+{
+    ReleaseReference();
+}
+
+template <typename T>
+void ShrdPtr<T>::Reset(T* newPtr)
+{
+    ShrdPtr<T> temp{UnqPtr<T>(newPtr)};
+    Swap(temp);
+}
+
+template <typename T>
+void ShrdPtr<T>::Reset(UnqPtr<T>&& owner)
+{
+    ShrdPtr<T> temp(std::move(owner));
+
+    Swap(temp);
 }
 
 #endif

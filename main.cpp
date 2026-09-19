@@ -11,7 +11,7 @@ int main()
     ShrdPtr<int> s2 = s1;
     ShrdPtr<int> s3 = s2;
 
-    std::cout << "size = " << s1.GetCount() << "\n";
+    std::cout << "size = " << s1.UseCount() << "\n";
     std::cout << "s1 = " << *s1.Get() << "\n";
     std::cout << "s2 = " << *s2.Get() << "\n";
     std::cout << "s3 = " << *s3.Get() << "\n";
