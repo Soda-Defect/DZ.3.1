@@ -2,6 +2,8 @@
 #define UNQPTR_H
 
 #include <cstddef>
+#include <type_traits>
+#include <utility>
 
 template<typename T>
 class UnqPtr{
@@ -20,6 +22,12 @@ public:
 
     UnqPtr<T>& operator=(const UnqPtr<T>& other) = delete;
     UnqPtr<T>& operator=(UnqPtr<T>&& other) noexcept;
+
+    template <typename U, typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
+    UnqPtr(UnqPtr<U>&& other) noexcept;
+
+    template <typename U, typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
+    UnqPtr<T>& operator=(UnqPtr<U>&& other) noexcept;
 
     ~UnqPtr();
 
@@ -70,6 +78,23 @@ UnqPtr<T> &UnqPtr<T>::operator=(UnqPtr<T>&& other) noexcept
     ptr = other.ptr;
     other.ptr = nullptr;
 
+    return *this;
+}
+
+template <typename T>
+template <typename U, typename>
+UnqPtr<T>::UnqPtr(UnqPtr<U>&& other) noexcept : ptr(other.Release()) {}
+
+template <typename T>
+template <typename U, typename>
+UnqPtr<T>& UnqPtr<T>::operator=(UnqPtr<U>&& other) noexcept
+{
+    if (reinterpret_cast<void*>(this) == reinterpret_cast<void*>(&other)){
+        return *this;
+    }
+
+    delete ptr;
+    ptr = other.Release();
     return *this;
 }
 

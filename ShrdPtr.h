@@ -2,6 +2,7 @@
 #define SHRDPTR_H
 
 #include <cstddef>
+#include <type_traits>
 #include <utility>
 #include "UnqPtr.h"
 
@@ -11,11 +12,14 @@ template <typename T>
 class ShrdPtr
 {
 private:
-    UnqPtr<T>* master;
+    T* ptr;
     size_t* referenceCount;
 
     void AddReference();
     void ReleaseReference();
+
+    template <typename U>
+    friend class ShrdPtr;
 
 public:
     ShrdPtr();
@@ -28,6 +32,12 @@ public:
 
     ShrdPtr<T>& operator=(const ShrdPtr<T>& other);
     ShrdPtr<T>& operator=(ShrdPtr<T>&& other) = delete;
+
+    template <typename U, typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
+    ShrdPtr(const ShrdPtr<U>& other) noexcept;
+
+    template <typename U, typename = typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
+    ShrdPtr<T>& operator=(const ShrdPtr<U>& other) noexcept;
 
     ~ShrdPtr();
 
@@ -71,35 +81,35 @@ void ShrdPtr<T>::ReleaseReference()
 
     if (*referenceCount == 0)
     {
-        delete master;
+        delete ptr;
         delete referenceCount;
     }
 
-    master = nullptr;
+    ptr = nullptr;
     referenceCount = nullptr;
 }
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(): master(nullptr), referenceCount(nullptr) {}
+ShrdPtr<T>::ShrdPtr(): ptr(nullptr), referenceCount(nullptr) {}
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(std::nullptr_t): master(nullptr), referenceCount(nullptr) {}
+ShrdPtr<T>::ShrdPtr(std::nullptr_t): ptr(nullptr), referenceCount(nullptr) {}
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner): master(nullptr), referenceCount(nullptr)
+ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner): ptr(nullptr), referenceCount(nullptr)
 {
-    if (owner.Get() == nullptr){
+    if (owner.Get() == nullptr) {
         return;
     }
 
-    size_t* newCount = new size_t(1);
-    master = new UnqPtr<T>(std::move(owner));
+    size_t* count = new size_t(1);
 
-    referenceCount = newCount;
+    ptr = owner.Release();
+    referenceCount = count;
 }
 
 template <typename T>
-ShrdPtr<T>::ShrdPtr(const ShrdPtr<T>& other) : master(other.master), referenceCount(other.referenceCount)
+ShrdPtr<T>::ShrdPtr(const ShrdPtr<T>& other) : ptr(other.ptr), referenceCount(other.referenceCount)
 {
     AddReference();
 }
@@ -113,7 +123,28 @@ ShrdPtr<T>& ShrdPtr<T>::operator=(const ShrdPtr<T>& other)
 
     ReleaseReference();
 
-    master = other.master;
+    ptr = other.ptr;
+    referenceCount = other.referenceCount;
+
+    AddReference();
+
+    return *this;
+}
+
+template <typename T>
+template <typename U, typename>
+ShrdPtr<T>::ShrdPtr(const ShrdPtr<U>& other) noexcept : ptr(other.ptr), referenceCount(other.referenceCount)
+{
+    AddReference();
+}
+
+template <typename T>
+template <typename U, typename>
+ShrdPtr<T>& ShrdPtr<T>::operator=(const ShrdPtr<U>& other) noexcept
+{
+    ReleaseReference();
+
+    ptr = other.ptr;
     referenceCount = other.referenceCount;
 
     AddReference();
@@ -146,59 +177,51 @@ bool ShrdPtr<T>::Unique() const
 template <typename T>
 T* ShrdPtr<T>::Get()
 {
-    if (master == nullptr){
-        return nullptr;
-    }
-
-    return master->Get();
+    return ptr;
 }
 
 template <typename T>
 const T* ShrdPtr<T>::Get() const
 {
-    if (master == nullptr){
-        return nullptr;
-    }
-
-    return master->Get();
+    return ptr;
 }
 
 template <typename T>
 T& ShrdPtr<T>::operator*()
 {
-    return *master->Get();
+    return *ptr;
 }
 
 template <typename T>
 const T& ShrdPtr<T>::operator*() const
 {
-    return *master->Get();
+    return *ptr;
 }
 
 template <typename T>
 T* ShrdPtr<T>::operator->()
 {
-    return master->Get();
+    return ptr;
 }
 
 template <typename T>
 const T* ShrdPtr<T>::operator->() const
 {
-    return master->Get();
+    return ptr;
 }
 
 template <typename T>
 ShrdPtr<T>::operator bool() const
 {
-    return master != nullptr && master->Get() != nullptr;
+    return ptr != nullptr;
 }
 
 template <typename T>
 void ShrdPtr<T>::Swap(ShrdPtr<T>& other)
 {
-    UnqPtr<T>* tempMaster = master;
-    master = other.master;
-    other.master = tempMaster;
+    T* tempPtr = ptr;
+    ptr = other.ptr;
+    other.ptr = tempPtr;
 
     size_t* tempCount = referenceCount;
     referenceCount = other.referenceCount;
@@ -214,7 +237,7 @@ void ShrdPtr<T>::Reset()
 template <typename T>
 void ShrdPtr<T>::Reset(T* newPtr)
 {
-    if (Get() == newPtr){
+    if (ptr == newPtr){
         return;
     }
 
