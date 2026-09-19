@@ -16,7 +16,7 @@ int main()
     std::cout << "s2 = " << *s2.Get() << "\n";
     std::cout << "s3 = " << *s3.Get() << "\n";
 
-    return 1;
+    return 0;
 }
 
 //g++ -std=c++11 -Wall -Wextra -o program main.cpp

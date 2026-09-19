@@ -31,8 +31,8 @@ public:
 
     ~ShrdPtr();
 
-    size_t UseCount();
-    bool Unique();
+    size_t UseCount() const;
+    bool Unique() const;
 
     T* Get();
     const T* Get() const;
@@ -128,7 +128,7 @@ ShrdPtr<T>::~ShrdPtr()
 }
 
 template <typename T>
-size_t ShrdPtr<T>::UseCount()
+size_t ShrdPtr<T>::UseCount() const
 {
     if (referenceCount == nullptr){
         return 0;
@@ -138,7 +138,7 @@ size_t ShrdPtr<T>::UseCount()
 }
 
 template <typename T>
-bool ShrdPtr<T>::Unique()
+bool ShrdPtr<T>::Unique() const
 {
     return UseCount() == 1;
 }
@@ -214,8 +214,13 @@ void ShrdPtr<T>::Reset()
 template <typename T>
 void ShrdPtr<T>::Reset(T* newPtr)
 {
-    ShrdPtr<T> temp{UnqPtr<T>(newPtr)};
-    Swap(temp);
+    if (Get() == newPtr){
+        return;
+    }
+
+    UnqPtr<T> owner(newPtr);
+
+    Reset(std::move(owner));
 }
 
 template <typename T>
