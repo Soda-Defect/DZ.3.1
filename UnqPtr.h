@@ -98,6 +98,8 @@ UnqPtr<T>& UnqPtr<T>::operator=(UnqPtr<U>&& other) noexcept
     return *this;
 }
 
+//указатель на массив может передаваться
+//добавить санитайзер
 template <typename T>
 UnqPtr<T>::~UnqPtr()
 {
