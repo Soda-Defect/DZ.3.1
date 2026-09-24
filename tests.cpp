@@ -59,7 +59,6 @@ struct Derived : Base {
     ~Derived() override { ++destroyed; }
 };
 
-// Compile-time checks: these are expected restrictions of the provided classes.
 static_assert(!std::is_copy_constructible_v<UnqPtr<int>>);
 static_assert(!std::is_copy_assignable_v<UnqPtr<int>>);
 static_assert(std::is_move_constructible_v<UnqPtr<int>>);
@@ -141,7 +140,7 @@ void UnqResetSwapAndLifetime() {
         UnqPtr<Lifetime> second(new Lifetime(2));
         Lifetime* original = first.Get();
 
-        first.Reset(original);  // Reset with the same pointer is a no-op.
+        first.Reset(original);  
         CHECK(Lifetime::alive == 2);
         first.Swap(second);
         CHECK(first->value == 2);
@@ -284,7 +283,7 @@ void ShrdResetAndSwap() {
         first.Reset();
         CHECK(!first);
         CHECK(Lifetime::destroyed == 4);
-        first.Reset(); // Repeated reset of an empty pointer.
+        first.Reset(); 
         CHECK(first.UseCount() == 0);
     }
     CHECK(Lifetime::alive == 0);
@@ -306,7 +305,7 @@ void ShrdCompatibleTypes() {
         CHECK(Base::destroyed == 1);
         CHECK(child.UseCount() == 3);
         CHECK(another.UseCount() == 3);
-        parent = child; // Assignment when both types already share a control block.
+        parent = child; 
         CHECK(child.UseCount() == 3);
         child.Reset();
         CHECK(parent.UseCount() == 2);
@@ -322,7 +321,6 @@ void StressTest() {
     Lifetime::Clear();
     {
         ShrdPtr<Lifetime> root(UnqPtr<Lifetime>(new Lifetime(123)));
-        // Array assignment avoids relying on a move constructor for ShrdPtr.
         ShrdPtr<Lifetime>* copies = new ShrdPtr<Lifetime>[count];
         for (std::size_t i = 0; i < count; ++i) {
             copies[i] = root;
@@ -349,6 +347,69 @@ void StressTest() {
     CHECK(Lifetime::destroyed == static_cast<int>(count));
 }
 
+void ArraySupportTest()
+{
+    Lifetime::Clear();
+
+    {
+        UnqPtr<Lifetime[]> array(new Lifetime[5]);
+
+        CHECK(Lifetime::alive == 5);
+
+        array[0].value = 10;
+        array[4].value = 50;
+
+        CHECK(array[0].value == 10);
+        CHECK(array[4].value == 50);
+
+        UnqPtr<Lifetime[]> moved(std::move(array));
+
+        CHECK(!array);
+        CHECK(moved);
+        CHECK(Lifetime::alive == 5);
+    }
+
+    CHECK(Lifetime::alive == 0);
+    CHECK(Lifetime::destroyed == 5);
+
+    Lifetime::Clear();
+
+    {
+        ShrdPtr<Lifetime[]> first(
+            UnqPtr<Lifetime[]>(new Lifetime[3])
+        );
+
+        CHECK(first.UseCount() == 1);
+        CHECK(first.Unique());
+        CHECK(Lifetime::alive == 3);
+
+        {
+            ShrdPtr<Lifetime[]> second(first);
+
+            CHECK(first.UseCount() == 2);
+
+            second[0].value = 100;
+
+            CHECK(first[0].value == 100);
+
+            second.Reset();
+
+            CHECK(first.UseCount() == 1);
+            CHECK(Lifetime::alive == 3);
+        }
+
+        CHECK(Lifetime::destroyed == 0);
+
+        first.Reset();
+
+        CHECK(Lifetime::alive == 0);
+        CHECK(Lifetime::destroyed == 3);
+    }
+
+    CHECK(Lifetime::alive == 0);
+    CHECK(Lifetime::destroyed == 3);
+}
+
 using TestFunction = void (*)();
 
 struct TestCase {
@@ -356,7 +417,7 @@ struct TestCase {
     TestFunction function;
 };
 
-} // namespace
+} 
 
 int RunAllTests() {
     const TestCase tests[] = {
@@ -368,7 +429,8 @@ int RunAllTests() {
         {"ShrdPtr: copy, assignment, lifetime", ShrdCopyAssignmentAndLifetime},
         {"ShrdPtr: reset and swap", ShrdResetAndSwap},
         {"ShrdPtr: compatible types", ShrdCompatibleTypes},
-        {"Stress test: ownership and destruction", StressTest}
+        {"Stress test: ownership and destruction", StressTest},
+        {"Array support", ArraySupportTest}
     };
 
     int passed = 0;

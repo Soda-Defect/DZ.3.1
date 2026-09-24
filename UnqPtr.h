@@ -10,6 +10,8 @@ class UnqPtr{
 private:
     T* ptr;
 
+    template <typename U>
+    friend class UnqPtr;
 public:
     UnqPtr();
     UnqPtr(std::nullptr_t);
@@ -174,5 +176,87 @@ void UnqPtr<T>::Swap(UnqPtr<T>& other)
     ptr = other.ptr;
     other.ptr = temp;
 }
+
+template <typename T>
+class UnqPtr<T[]>
+{
+private:
+    T* ptr;
+
+public:
+    UnqPtr() : ptr(nullptr) {}
+
+    UnqPtr(std::nullptr_t) : ptr(nullptr) {}
+
+    explicit UnqPtr(T* ptr_) : ptr(ptr_) {}
+
+    UnqPtr(const UnqPtr& other) = delete;
+
+    UnqPtr& operator=(const UnqPtr& other) = delete;
+
+    UnqPtr(UnqPtr&& other) noexcept : ptr(other.Release()) {}
+
+    UnqPtr& operator=(UnqPtr&& other) noexcept
+    {
+        if (this != &other)
+        {
+            Reset(other.Release());
+        }
+
+        return *this;
+    }
+
+    ~UnqPtr()
+    {
+        delete[] ptr;
+    }
+
+    T* Get() 
+    {
+        return ptr;
+    }
+
+    const T* Get() const 
+    {
+        return ptr;
+    }
+
+    T& operator[](size_t index)
+    {
+        return ptr[index];
+    }
+
+    const T& operator[](size_t index) const
+    {
+        return ptr[index];
+    }
+
+    operator bool() const 
+    {
+        return ptr != nullptr;
+    }
+
+    void Reset(T* newPtr = nullptr)
+    {
+        if (ptr != newPtr)
+        {
+            delete[] ptr;
+            ptr = newPtr;
+        }
+    }
+
+    T* Release()
+    {
+        T* result = ptr;
+        ptr = nullptr;
+
+        return result;
+    }
+
+    void Swap(UnqPtr& other)
+    {
+        std::swap(ptr, other.ptr);
+    }
+};
 
 #endif

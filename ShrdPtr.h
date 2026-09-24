@@ -255,4 +255,152 @@ void ShrdPtr<T>::Reset(UnqPtr<T>&& owner)
     Swap(temp);
 }
 
+template <typename T>
+class ShrdPtr<T[]>
+{
+private:
+    T* ptr;
+    size_t* referenceCount;
+
+    void AddReference() 
+    {
+        if (referenceCount != nullptr)
+        {
+            ++(*referenceCount);
+        }
+    }
+
+    void ReleaseReference()
+    {
+        if (referenceCount == nullptr)
+        {
+            return;
+        }
+
+        --(*referenceCount);
+
+        if (*referenceCount == 0)
+        {
+            delete[] ptr;
+            delete referenceCount;
+        }
+
+        ptr = nullptr;
+        referenceCount = nullptr;
+    }
+
+public:
+    ShrdPtr() : ptr(nullptr), referenceCount(nullptr) {}
+
+    ShrdPtr(std::nullptr_t) : ptr(nullptr), referenceCount(nullptr) {}
+
+    ShrdPtr(UnqPtr<T[]>&& owner) : ptr(nullptr), referenceCount(nullptr)
+    {
+        if (!owner)
+        {
+            return;
+        }
+
+        size_t* count = new size_t(1);
+
+        ptr = owner.Release();
+        referenceCount = count;
+    }
+
+    ShrdPtr(const ShrdPtr& other) : ptr(other.ptr), referenceCount(other.referenceCount)
+    {
+        AddReference();
+    }
+
+    ShrdPtr(ShrdPtr&& other) = delete;
+
+    ShrdPtr& operator=(const ShrdPtr& other)
+    {
+        if (this != &other)
+        {
+            ShrdPtr temp(other);
+            Swap(temp);
+        }
+
+        return *this;
+    }
+
+    ShrdPtr& operator=(ShrdPtr&& other) = delete;
+
+    ~ShrdPtr()
+    {
+        ReleaseReference();
+    }
+
+    size_t UseCount() const
+    {
+        if (referenceCount == nullptr)
+        {
+            return 0;
+        }
+
+        return *referenceCount;
+    }
+
+    bool Unique() const
+    {
+        return UseCount() == 1;
+    }
+
+    T* Get()
+    {
+        return ptr;
+    }
+
+    const T* Get() const
+    {
+        return ptr;
+    }
+
+    T& operator[](size_t index)
+    {
+        return ptr[index];
+    }
+
+    const T& operator[](size_t index) const
+    {
+        return ptr[index];
+    }
+
+    operator bool() const
+    {
+        return ptr != nullptr;
+    }
+
+    void Reset() noexcept
+    {
+        ReleaseReference();
+    }
+
+    void Reset(T* newPtr)
+    {
+        if (ptr == newPtr)
+        {
+            return;
+        }
+
+        UnqPtr<T[]> owner(newPtr);
+
+        Reset(std::move(owner));
+    }
+
+    void Reset(UnqPtr<T[]>&& owner)
+    {
+        ShrdPtr temp(std::move(owner));
+
+        Swap(temp);
+    }
+
+    void Swap(ShrdPtr& other) noexcept
+    {
+        std::swap(ptr, other.ptr);
+        std::swap(referenceCount, other.referenceCount);
+    }
+};
+
 #endif
