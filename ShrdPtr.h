@@ -66,7 +66,7 @@ public:
 template<typename T, typename... Args>
 ShrdPtr<T> makeShrd(Args&&... args)
 {
-    return ShrdPtr<T>(new T(std::forward<Args>(args)...));
+    return ShrdPtr<T>(UnqPtr<T>(new T(std::forward<Args>(args)...)));
 }
 
 template <typename T>
