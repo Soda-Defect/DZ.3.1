@@ -63,6 +63,12 @@ public:
     void Swap(ShrdPtr<T>& other);
 };
 
+template<typename T, typename... Args>
+ShrdPtr<T> makeShrd(Args&&... args)
+{
+    return ShrdPtr<T>(new T(std::forward<Args>(args)...));
+}
+
 template <typename T>
 void ShrdPtr<T>::AddReference()
 {
