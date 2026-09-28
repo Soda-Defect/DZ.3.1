@@ -1,4 +1,4 @@
-#include "TestSupport.h"
+#include "Tests/TestSupport.h"
 
 #include <iostream>
 #include <string_view>
@@ -21,6 +21,6 @@ int main(int argc, char* argv[]) {
     return result;
 }
 
-//g++ -std=c++17 -Wall -Wextra -pedantic -O2 main.cpp UnqPtrTests.cpp ShrdPtrTests.cpp benchmarks.cpp BenchmarkObserver.cpp -o pointer_tests
+//g++ -std=c++17 -Wall -Wextra -pedantic -O2 main.cpp Tests/UnqPtrTests.cpp Tests/ShrdPtrTests.cpp Benchmark/benchmarks.cpp Benchmark/BenchmarkObserver.cpp -o pointer_tests
 //pointer_tests.exe
 //pointer_tests.exe --benchmark

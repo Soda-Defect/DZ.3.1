@@ -1,4 +1,4 @@
-#include "ShrdPtr.h"
+#include "../Pointers/ShrdPtr.h"
 #include "TestSupport.h"
 
 #include <cstddef>

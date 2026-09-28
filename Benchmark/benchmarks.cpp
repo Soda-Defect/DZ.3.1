@@ -1,6 +1,6 @@
 #include "BenchmarkObserver.h"
-#include "ShrdPtr.h"
-#include "UnqPtr.h"
+#include "../Pointers/ShrdPtr.h"
+#include "../Pointers/UnqPtr.h"
 
 #include <algorithm>
 #include <chrono>
