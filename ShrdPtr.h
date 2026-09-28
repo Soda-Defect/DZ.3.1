@@ -14,7 +14,7 @@ class ShrdPtr
 {
 private:
     T* ptr;
-    size_t* referenceCount;
+    unsigned int* referenceCount;
 
     void AddReference();
     void ReleaseReference();
@@ -42,7 +42,7 @@ public:
 
     ~ShrdPtr();
 
-    size_t UseCount() const;
+    unsigned int UseCount() const;
     bool Unique() const;
 
     T* Get();
@@ -103,7 +103,7 @@ ShrdPtr<T>::ShrdPtr(UnqPtr<T>&& owner): ptr(nullptr), referenceCount(nullptr)
         return;
     }
 
-    size_t* count = new size_t(1);
+    unsigned int* count = new unsigned int(1);
 
     ptr = owner.Release();
     referenceCount = count;
@@ -160,7 +160,7 @@ ShrdPtr<T>::~ShrdPtr()
 }
 
 template <typename T>
-size_t ShrdPtr<T>::UseCount() const
+unsigned int ShrdPtr<T>::UseCount() const
 {
     if (referenceCount == nullptr){
         return 0;
@@ -224,7 +224,7 @@ void ShrdPtr<T>::Swap(ShrdPtr<T>& other)
     ptr = other.ptr;
     other.ptr = tempPtr;
 
-    size_t* tempCount = referenceCount;
+    unsigned int* tempCount = referenceCount;
     referenceCount = other.referenceCount;
     other.referenceCount = tempCount;
 }
@@ -260,7 +260,7 @@ class ShrdPtr<T[]>
 {
 private:
     T* ptr;
-    size_t* referenceCount;
+    unsigned int* referenceCount;
 
     void AddReference() 
     {
@@ -301,7 +301,7 @@ public:
             return;
         }
 
-        size_t* count = new size_t(1);
+        unsigned int* count = new unsigned int(1);
 
         ptr = owner.Release();
         referenceCount = count;
@@ -332,7 +332,7 @@ public:
         ReleaseReference();
     }
 
-    size_t UseCount() const
+    unsigned int UseCount() const
     {
         if (referenceCount == nullptr)
         {
