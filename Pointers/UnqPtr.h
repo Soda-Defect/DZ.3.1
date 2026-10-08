@@ -259,4 +259,23 @@ public:
     }
 };
 
+template <typename T, typename... Args>
+std::enable_if_t<!std::is_array<T>::value, UnqPtr<T>>
+make_unq(Args&&... args)
+{
+    return UnqPtr<T>(new T(std::forward<Args>(args)...));
+}
+
+template <typename T>
+std::enable_if_t<std::is_array<T>::value && std::extent<T>::value == 0, UnqPtr<T>>
+make_unq(std::size_t size)
+{
+    using Element = typename std::remove_extent<T>::type;
+    return UnqPtr<T>(new Element[size]());
+}
+
+template <typename T, typename... Args>
+std::enable_if_t<(std::extent<T>::value != 0), UnqPtr<T>>
+make_unq(Args&&...) = delete;
+
 #endif
